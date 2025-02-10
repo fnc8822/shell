@@ -9,10 +9,14 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-
+#include <dirent.h>
+#define NUMBER_OF_MEMORY_METRICS
+size_t memory_metrics[];
+enum {ALLOCATED, FREE};
 /**
  * @brief Macro para alinear una cantidad de bytes al siguiente múltiplo de 8.
  * 
@@ -28,8 +32,12 @@
 #define FIRST_FIT 0
 /** Política de asignación Best Fit. */
 #define BEST_FIT 1
+/** Política de asignación Worst Fit. */
+#define WORST_FIT 2
 /** Tamaño del bloque */
 #define DATA_START 1
+
+#define ZERO_SIZE_EVENT 0
 
 /**
  * @struct s_block
@@ -93,7 +101,7 @@ t_block extend_heap(t_block last, size_t s);
 void split_block(t_block b, size_t s);
 
 /**
- * @brief Fusiona un bloque libre con su siguiente bloque si también está libre.
+ * @brief Fusiona un bloque libre con su siguiente bloque recursivamente si también está libre.
  *
  * @param b Bloque a fusionar.
  * @return t_block Puntero al bloque fusionado.
@@ -149,8 +157,22 @@ void *realloc(void *p, size_t size);
 void check_heap(void *data);
 
 /**
- * @brief Configura el modo de asignación de memoria (First Fit o Best Fit).
+ * @brief Configura el modo de asignación de memoria (First Fit, Worst Fit o Best Fit).
  *
- * @param mode Modo de asignación (0 para First Fit, 1 para Best Fit).
+ * @param mode Modo de asignación (0 para First Fit, 1 para Best Fit, 2 para Worst fit).
  */
 void malloc_control(int mode);
+
+/**
+ * @brief Logs an event to a specified log file.
+ *
+ * This function logs an event message along with its size to a log file
+ * specified by the environment variable "LOG_FILE". If the environment
+ * variable is not set or if there is an error opening the log file, the
+ * function returns -1.
+ *
+ * @param event A pointer to a null-terminated string containing the event message.
+ * @param size The size of the event message.
+ * @return int Returns 0 on success, or -1 if there is an error.
+ */
+int log_event(const char *event, size_t size);
