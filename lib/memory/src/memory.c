@@ -3,10 +3,12 @@
 
 typedef struct s_block *t_block;
 void *base = NULL;
-int method = 0;
+int method = FIRST_FIT;
+int counter = 0;
 size_t memory_metrics[] = {0, 0};
+const char *log_file_name = "memlog.txt";
 
-t_block find_block(t_block *last, size_t size){
+t_block find_block_(t_block *last, size_t size){
     t_block b = base;
 
     if (method == FIRST_FIT){
@@ -60,6 +62,10 @@ void split_block(t_block b, size_t s){
     new->free = 1;
     b->size = s;
     b->next = new;
+    
+    if(new->next)
+        new->next->prev = new;
+    
 }
 
 void copy_block(t_block src, t_block dst){
@@ -72,7 +78,7 @@ void copy_block(t_block src, t_block dst){
         ddata[i] = sdata[i];
 }
 
-t_block get_block(void *p){
+t_block get_block_(void *p){
     char *tmp;
     tmp = p;
     
@@ -80,14 +86,12 @@ t_block get_block(void *p){
         tmp -= BLOCK_SIZE;
     }
     return (t_block)(tmp);
-}
+    }
 
-int valid_addr(void *p){
+int valid_addr_(void *p){
     if (base){
-        if (p > base && p < sbrk(0)){
-            t_block b = get_block(p);
-            return b && (p == b->ptr);
-        }
+        t_block b = get_block_(p);
+        return b && (p == b->ptr);
     }
     return (0);
 }
@@ -96,41 +100,38 @@ t_block fusion(t_block b){
     while(b->next && b->next->free){
         b->size += BLOCK_SIZE + b->next->size;
         b->next = b->next->next;
-        
-        if (b->next)
-            b->next->prev = b;
-    }
-    if (b->next && b->next->free){
-        b->size += BLOCK_SIZE + b->next->size;
-        b->next = b->next->next;
-        
         if (b->next)
             b->next->prev = b;
     }
     return b;
 }
 
-t_block extend_heap(t_block last, size_t s){
+t_block extend_heap_(t_block last, size_t s){
     t_block b;
-    b = mmap(0, s, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    b = mmap(0, s, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
     
     if (b == MAP_FAILED){
         return NULL;
     }
     b->size = s;
     b->next = NULL;
-    b->prev = last;
     b->ptr = b->data;
     
-    if (last)
+    if (last){
         last->next = b;
+        b->prev = last;
+    }
     
+    if(sbrk(b->size+BLOCK_SIZE) == (void *)-1){
+        return NULL;
+    }
     b->free = 0;
+
     return b;
 }
 
-void get_method(int m){
-    method = m;
+int get_method(){
+    return method;
 }
 
 void set_method(int m){
@@ -149,26 +150,26 @@ void malloc_control(int m){
     }
 }
 
-void *malloc(size_t size){
+
+void *malloc_(size_t size){
     t_block b, last;
     size_t s;
     s = align(size);
     log_event("malloc", size);
-
     if (base){
         last = base;
-        b = find_block(&last, s);
+        b = find_block_(&last, s);
         if (b) {
             if ((b->size - s) >= (BLOCK_SIZE + 4))
                 split_block(b, s);
             b->free = 0;
         } else {
-            b = extend_heap(last, s);
+            b = extend_heap_(last, s);
             if (!b)
                 return (NULL);
         }
     } else {
-        b = extend_heap(NULL, s);
+        b = extend_heap_(NULL, s);
         if (!b)
             return (NULL);
         base = b;
@@ -176,12 +177,15 @@ void *malloc(size_t size){
     return (b->data);
 }
 
-void free(void *ptr){
+void free_(void *ptr){
+    if (ptr == NULL){
+        printf("ERROR: Pointer is NULL\n");
+        return;
+    }
     t_block b;
     log_event("free", ZERO_SIZE_EVENT);
-
-    if (valid_addr(ptr)){
-        b = get_block(ptr);
+    if (valid_addr_(ptr)){
+        b = get_block_(ptr);
         b->free = 1;
 
         if (b->next && b->next->free)
@@ -199,7 +203,14 @@ void free(void *ptr){
             b->prev = NULL;
         }
     }
+    else{
+        printf("Invalid address\n");
+        if(ptr == NULL){
+            printf("POinter is NULL\n");
+        }
+    }
 }
+
 
 void *calloc(size_t number, size_t size){
     size_t *new;
@@ -208,26 +219,27 @@ void *calloc(size_t number, size_t size){
     if (!number || !size){
         return (NULL);
     }
-    new = malloc(number * size);
+    new = malloc_(number * size);
     if (new){
         s4 = align(number * size) << 2;
         for (i = 0; i < s4; i++)
             new[i] = 0;
     }
-    return (new);
+    return new;
 }
 
-void *realloc(void *ptr, size_t size){
+void *realloc_(void *ptr, size_t size){
     size_t s;
     t_block b, new;
     void *newp;
     log_event("realloc", size);
-    if (!ptr)
-        return (malloc(size));
+    if (!ptr){
+        return (malloc_(size));
+    }
 
-    if (valid_addr(ptr)){
+    if (valid_addr_(ptr)){
         s = align(size);
-        b = get_block(ptr);
+        b = get_block_(ptr);
 
         if (b->size >= s){
             if (b->size - s >= (BLOCK_SIZE + 4))
@@ -238,12 +250,12 @@ void *realloc(void *ptr, size_t size){
                 if (b->size - s >= (BLOCK_SIZE + 4))
                     split_block(b, s);
             } else {
-                newp = malloc(s);
+                newp = malloc_(s);
                 if (!newp)
                     return (NULL);
-                new = get_block(newp);
+                new = get_block_(newp);
                 copy_block(b, new);
-                free(ptr);
+                free_(ptr);
                 return (newp);
             }
         }
@@ -258,7 +270,7 @@ void check_heap(void *data){
         return;
     }
 
-    t_block block = get_block(data);
+    t_block block = get_block_(data);
 
     if (block == NULL){
         printf("Block is NULL\n");
@@ -269,7 +281,7 @@ void check_heap(void *data){
     printf("Size: %zu\n", block->size);
     t_block current = base;
     while(current){
-        if(current->size<=0){
+        if(current->size <= 0){
             printf("Inconsistency: invalid block size in %p\n", current);
         }
         if(current->free && current->next && current->next->free){
@@ -278,12 +290,13 @@ void check_heap(void *data){
         if(current->free && current->prev && current->prev->free){
             printf("Inconsistency: two adjacent free blocks in %p and %p\n", current, current->prev);
         }
-        if(current->next->size<=0){
+        if(current->next && current->next->size <= 0){
             printf("Inconsistency: invalid block size in %p\n", current->next);
         }
-        if(current->next->prev <=0){
+        if(current->next && current->next->prev <= 0){
             printf("Inconsistency: invalid block size in %p\n", current->next);
-        } 
+        }
+        current = current->next;
     }
     if (block->next != NULL) {
         printf("Next block: %p\n", (void *)(block->next));
@@ -326,7 +339,6 @@ void memory_usage() {
 }
 
 int log_event(const char *event, size_t size){
-    const char *log_file_name = getenv("LOG_FILE");
     if (log_file_name == NULL){
         return -1;
     }

@@ -9,6 +9,11 @@ project(
     LANGUAGES C
 )
 
+# Set the default build type to Debug
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 # Find dependencies
 find_package(cJSON REQUIRED)
 find_package(unity REQUIRED)
@@ -19,14 +24,14 @@ include(CTest)
 
 # Flags for compiling
 set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wpedantic -Werror -Wunused-parameter -Wmissing-prototypes -Wstrict-prototypes -fhardened")
+set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wpedantic -Wunused-parameter -Wmissing-prototypes -Wstrict-prototypes")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage")
 
 # Pass PROJECT_DIR
 add_definitions(-DPROJECT_DIR=\"${PROJECT_DIR}\")
 
 # Conan integration
-include(${CMAKE_BINARY_DIR}/Release/generators/conan_toolchain.cmake)
+include(${CMAKE_BINARY_DIR}/Debug/generators/conan_toolchain.cmake)
 
 # Include headers
 include_directories(include)
@@ -49,4 +54,9 @@ add_subdirectory(shell)
 # Set enviroment variables
 add_custom_target(run_with_env
     COMMAND bash -c "export CONFIG_FILE_PATH=${CMAKE_SOURCE_DIR}/shell/config.json && ./shell/ShellProject"
+)
+
+# Add custom target to run with LD_PRELOAD
+add_custom_target(run_with_ld_preload
+    COMMAND bash -c "LD_PRELOAD=${CMAKE_BINARY_DIR}/lib/memory/libmemory.so ./shell/ShellProject"
 )

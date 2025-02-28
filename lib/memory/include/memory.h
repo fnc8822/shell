@@ -25,7 +25,7 @@ enum {ALLOCATED, FREE};
 #define align(x) (((((x)-1) >> 3) << 3) + 8)
 
 /** Tamaño mínimo de un bloque de memoria. */
-#define BLOCK_SIZE 40
+#define BLOCK_SIZE sizeof(struct s_block)
 /** Tamaño de página en memoria. */
 #define PAGESIZE 4096
 /** Política de asignación First Fit. */
@@ -52,7 +52,7 @@ struct s_block {
     struct s_block *prev; /**< Puntero al bloque anterior en la lista enlazada. */
     int free;             /**< Indicador de si el bloque está libre (1) o ocupado (0). */
     void *ptr;            /**< Puntero a la dirección de los datos almacenados. */
-    char data[DATA_START];         /**< Área donde comienzan los datos del bloque. */
+    char data[];         /**< Área donde comienzan los datos del bloque. */
 };
 
 /** Tipo de puntero para un bloque de memoria. */
@@ -64,7 +64,7 @@ typedef struct s_block *t_block;
  * @param p Puntero a la dirección de datos.
  * @return t_block Puntero al bloque de memoria correspondiente.
  */
-t_block get_block(void *p);
+t_block get_block_(void *p);
 
 /**
  * @brief Verifica si una dirección de memoria es válida.
@@ -72,7 +72,7 @@ t_block get_block(void *p);
  * @param p Dirección de memoria a verificar.
  * @return int Retorna 1 si la dirección es válida, 0 en caso contrario.
  */
-int valid_addr(void *p);
+int valid_addr_(void *p);
 
 /**
  * @brief Encuentra un bloque libre que tenga al menos el tamaño solicitado.
@@ -81,7 +81,7 @@ int valid_addr(void *p);
  * @param size Tamaño solicitado.
  * @return t_block Puntero al bloque encontrado, o NULL si no se encuentra ninguno.
  */
-t_block find_block(t_block *last, size_t size);
+t_block find_block_(t_block *last, size_t size);
 
 /**
  * @brief Expande el heap para crear un nuevo bloque de memoria.
@@ -90,7 +90,7 @@ t_block find_block(t_block *last, size_t size);
  * @param s Tamaño del nuevo bloque.
  * @return t_block Puntero al nuevo bloque creado.
  */
-t_block extend_heap(t_block last, size_t s);
+t_block extend_heap_(t_block last, size_t s);
 
 /**
  * @brief Divide un bloque de memoria en dos, si el tamaño solicitado es menor que el bloque disponible.
@@ -122,14 +122,14 @@ void copy_block(t_block src, t_block dst);
  * @param size Tamaño en bytes del bloque a asignar.
  * @return void* Puntero al área de datos asignada.
  */
-void *malloc(size_t size);
+void *malloc_(size_t size);
 
 /**
  * @brief Libera un bloque de memoria previamente asignado.
  *
  * @param p Puntero al área de datos a liberar.
  */
-void free(void *p);
+void free_(void *p);
 
 /**
  * @brief Asigna un bloque de memoria para un número de elementos, inicializándolo a cero.
