@@ -1,62 +1,24 @@
-# Verify cmake version
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
 
-# Create Project
-project(
-    "ShellProject"
-    VERSION 1.0.0
-    DESCRIPTION "A nice shell project"
-    LANGUAGES C
-)
+# Set the project name
+project(MyCProject)
 
-# Set the default build type to Debug
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
-endif()
-
-# Find dependencies
 find_package(cJSON REQUIRED)
 find_package(unity REQUIRED)
-find_package(libmicrohttpd REQUIRED)
 
-# Enable testing
-include(CTest)
-
-# Flags for compiling
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wpedantic -Wunused-parameter -Wmissing-prototypes -Wstrict-prototypes")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage")
-
-# Pass PROJECT_DIR
-add_definitions(-DPROJECT_DIR=\"${PROJECT_DIR}\")
-
-# Conan integration
-include(${CMAKE_BINARY_DIR}/Debug/generators/conan_toolchain.cmake)
-
-# Include headers
-include_directories(include)
-
-# Add metricas as a subdirectory
-add_subdirectory(shell/metricas)
-
-# Include directories for metricas
-include_directories(metricas/lib/prom-c-client/prom/include)
-include_directories(metricas/lib/prom-c-client/promhttp/include)
-
-# Link directories for metricas
-link_directories(${CMAKE_BINARY_DIR}/metricas/lib/prom-c-client/prom)
-link_directories(${CMAKE_BINARY_DIR}/metricas/lib/prom-c-client/promhttp)
-
-# Add subdirectories
+# Add the subdirectory for the memory library
 add_subdirectory(lib/memory)
-add_subdirectory(shell)
+add_subdirectory(shell/metricas)
+add_subdirectory(tests)
 
-# Set enviroment variables
-add_custom_target(run_with_env
-    COMMAND bash -c "export CONFIG_FILE_PATH=${CMAKE_SOURCE_DIR}/shell/config.json && ./shell/ShellProject"
-)
+# Include directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/shell/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/memory/include)
 
-# Add custom target to run with LD_PRELOAD
-add_custom_target(run_with_ld_preload
-    COMMAND bash -c "LD_PRELOAD=${CMAKE_BINARY_DIR}/lib/memory/libmemory.so ./shell/ShellProject"
-)
+# Add the main executable
+add_executable(main shell/src/main.c)
+
+# Link the memory library with the main executable
+target_link_libraries(main memory cjson::cjson)
+
+enable_testing()

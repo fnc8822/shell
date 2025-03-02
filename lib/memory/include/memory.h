@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #define NUMBER_OF_MEMORY_METRICS
-size_t memory_metrics[];
+extern size_t memory_metrics[];
 enum {ALLOCATED, FREE};
 /**
  * @brief Macro para alinear una cantidad de bytes al siguiente múltiplo de 8.
@@ -164,6 +164,13 @@ void check_heap(void *data);
 void malloc_control(int mode);
 
 /**
+ * @brief Obtiene la cantidad de memoria asignada y liberada.
+ *
+ * @return size_t* Puntero a un arreglo con la cantidad de memoria asignada y liberada.
+ */
+size_t* get_allocator_memory_usage();
+
+/**
  * @brief Logs an event to a specified log file.
  *
  * This function logs an event message along with its size to a log file
@@ -176,3 +183,12 @@ void malloc_control(int mode);
  * @return int Returns 0 on success, or -1 if there is an error.
  */
 int log_event(const char *event, size_t size);
+
+/**
+ * @brief Sets the allocator method.
+ *
+ * This function sets the allocator method to the specified value.
+ *
+ * @param method 0=FIRST_FIT, 1=BEST_FIT, 2=WORST_FIT.
+ */
+void set_method(int method);

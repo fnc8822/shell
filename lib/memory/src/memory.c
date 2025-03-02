@@ -4,7 +4,7 @@
 typedef struct s_block *t_block;
 void *base = NULL;
 int method = FIRST_FIT;
-int counter = 0;
+int first_fit_counter = 0, best_fit_counter = 0, worst_fit_counter = 0;
 size_t memory_metrics[] = {0, 0};
 const char *log_file_name = "memlog.txt";
 
@@ -90,8 +90,10 @@ t_block get_block_(void *p){
 
 int valid_addr_(void *p){
     if (base){
-        t_block b = get_block_(p);
-        return b && (p == b->ptr);
+        if(p > base && p < sbrk(0)){
+            t_block b = get_block_(p);
+            return b && (p == b->ptr);
+        }
     }
     return (0);
 }
@@ -135,7 +137,23 @@ int get_method(){
 }
 
 void set_method(int m){
-    method = m;
+    switch (m){
+        case FIRST_FIT:
+            method = FIRST_FIT;
+            first_fit_counter++;
+            break;
+        case BEST_FIT:
+            method = BEST_FIT;
+            best_fit_counter++;
+            break;
+        case WORST_FIT:
+            method = WORST_FIT;
+            worst_fit_counter++;
+            break;
+        default:
+            printf("Error: invalid method\n");
+            break;
+    }
 }
 
 void malloc_control(int m){
@@ -179,7 +197,7 @@ void *malloc_(size_t size){
 
 void free_(void *ptr){
     if (ptr == NULL){
-        printf("ERROR: Pointer is NULL\n");
+        log_event("failed free_ with null pointer", ZERO_SIZE_EVENT);
         return;
     }
     t_block b;
@@ -204,10 +222,7 @@ void free_(void *ptr){
         }
     }
     else{
-        printf("Invalid address\n");
-        if(ptr == NULL){
-            printf("POinter is NULL\n");
-        }
+        log_event("failed free_ with invalid pointer", ZERO_SIZE_EVENT);
     }
 }
 
@@ -322,7 +337,10 @@ void check_heap(void *data){
     printf("Heap address: %p\n", sbrk(0));
 }
 
-void memory_usage() {
+size_t* get_allocator_memory_usage() {
+    if(base == NULL){
+        return NULL;
+    }
     t_block current = base;
     size_t total_allocated = 0;
     size_t total_free = 0;
@@ -336,6 +354,7 @@ void memory_usage() {
     }
     memory_metrics[ALLOCATED] = total_allocated;
     memory_metrics[FREE] = total_free;
+    return memory_metrics;
 }
 
 int log_event(const char *event, size_t size){

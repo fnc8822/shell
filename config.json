@@ -1,0 +1,4 @@
+{
+	"sampling_interval":	15,
+	"metrics":	["cpu_speed", "network", "memory"]
+}

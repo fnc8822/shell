@@ -1,0 +1,27 @@
+name: "Build"
+description: "Executes a compilation."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Conan
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install python3-pip
+        pip3 install conan
+
+    - name: Install Conan dependencies
+      shell: bash
+      run: |
+        conan profile detect --force
+        conan install . --build=missing
+
+    - name: Compile
+      shell: bash
+      run: |
+
+        SRC_FOLDER=$(pwd)/src
+
+        mkdir -p build && cd build
+        cmake -DCMAKE_TOOLCHAIN_FILE=Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DRUN_COVERAGE=1 -DPROJECT_DIR=${PROJECT_DIR} -DENABLE_CJSON_TEST=OFF .. && make -j2
