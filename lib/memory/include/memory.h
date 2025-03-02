@@ -8,21 +8,21 @@
 
 #pragma once
 
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
-#include <dirent.h>
+#include <unistd.h>
 #define NUMBER_OF_MEMORY_METRICS
 extern size_t memory_metrics[];
-enum {ALLOCATED, FREE};
+enum { ALLOCATED, FREE };
 /**
  * @brief Macro para alinear una cantidad de bytes al siguiente múltiplo de 8.
- * 
+ *
  * @param x Cantidad de bytes a alinear.
  */
-#define align(x) (((((x)-1) >> 3) << 3) + 8)
+#define align(x) (((((x) - 1) >> 3) << 3) + 8)
 
 /** Tamaño mínimo de un bloque de memoria. */
 #define BLOCK_SIZE sizeof(struct s_block)
@@ -43,16 +43,17 @@ enum {ALLOCATED, FREE};
  * @struct s_block
  * @brief Estructura para representar un bloque de memoria.
  *
- * Contiene la información necesaria para gestionar la asignación y 
+ * Contiene la información necesaria para gestionar la asignación y
  * liberación de un bloque de memoria.
  */
 struct s_block {
-    size_t size;          /**< Tamaño del bloque de datos. */
-    struct s_block *next; /**< Puntero al siguiente bloque en la lista enlazada. */
-    struct s_block *prev; /**< Puntero al bloque anterior en la lista enlazada. */
-    int free;             /**< Indicador de si el bloque está libre (1) o ocupado (0). */
-    void *ptr;            /**< Puntero a la dirección de los datos almacenados. */
-    char data[];         /**< Área donde comienzan los datos del bloque. */
+  size_t size; /**< Tamaño del bloque de datos. */
+  struct s_block
+      *next; /**< Puntero al siguiente bloque en la lista enlazada. */
+  struct s_block *prev; /**< Puntero al bloque anterior en la lista enlazada. */
+  int free;    /**< Indicador de si el bloque está libre (1) o ocupado (0). */
+  void *ptr;   /**< Puntero a la dirección de los datos almacenados. */
+  char data[]; /**< Área donde comienzan los datos del bloque. */
 };
 
 /** Tipo de puntero para un bloque de memoria. */
@@ -79,7 +80,8 @@ int valid_addr_(void *p);
  *
  * @param last Puntero al último bloque.
  * @param size Tamaño solicitado.
- * @return t_block Puntero al bloque encontrado, o NULL si no se encuentra ninguno.
+ * @return t_block Puntero al bloque encontrado, o NULL si no se encuentra
+ * ninguno.
  */
 t_block find_block_(t_block *last, size_t size);
 
@@ -93,7 +95,8 @@ t_block find_block_(t_block *last, size_t size);
 t_block extend_heap_(t_block last, size_t s);
 
 /**
- * @brief Divide un bloque de memoria en dos, si el tamaño solicitado es menor que el bloque disponible.
+ * @brief Divide un bloque de memoria en dos, si el tamaño solicitado es menor
+ * que el bloque disponible.
  *
  * @param b Bloque a dividir.
  * @param s Tamaño del nuevo bloque.
@@ -101,7 +104,8 @@ t_block extend_heap_(t_block last, size_t s);
 void split_block(t_block b, size_t s);
 
 /**
- * @brief Fusiona un bloque libre con su siguiente bloque recursivamente si también está libre.
+ * @brief Fusiona un bloque libre con su siguiente bloque recursivamente si
+ * también está libre.
  *
  * @param b Bloque a fusionar.
  * @return t_block Puntero al bloque fusionado.
@@ -132,7 +136,8 @@ void *malloc_(size_t size);
 void free_(void *p);
 
 /**
- * @brief Asigna un bloque de memoria para un número de elementos, inicializándolo a cero.
+ * @brief Asigna un bloque de memoria para un número de elementos,
+ * inicializándolo a cero.
  *
  * @param number Número de elementos.
  * @param size Tamaño de cada elemento.
@@ -157,18 +162,21 @@ void *realloc(void *p, size_t size);
 void check_heap(void *data);
 
 /**
- * @brief Configura el modo de asignación de memoria (First Fit, Worst Fit o Best Fit).
+ * @brief Configura el modo de asignación de memoria (First Fit, Worst Fit o
+ * Best Fit).
  *
- * @param mode Modo de asignación (0 para First Fit, 1 para Best Fit, 2 para Worst fit).
+ * @param mode Modo de asignación (0 para First Fit, 1 para Best Fit, 2 para
+ * Worst fit).
  */
 void malloc_control(int mode);
 
 /**
  * @brief Obtiene la cantidad de memoria asignada y liberada.
  *
- * @return size_t* Puntero a un arreglo con la cantidad de memoria asignada y liberada.
+ * @return size_t* Puntero a un arreglo con la cantidad de memoria asignada y
+ * liberada.
  */
-size_t* get_allocator_memory_usage();
+size_t *get_allocator_memory_usage();
 
 /**
  * @brief Logs an event to a specified log file.
@@ -178,7 +186,8 @@ size_t* get_allocator_memory_usage();
  * variable is not set or if there is an error opening the log file, the
  * function returns -1.
  *
- * @param event A pointer to a null-terminated string containing the event message.
+ * @param event A pointer to a null-terminated string containing the event
+ * message.
  * @param size The size of the event message.
  * @return int Returns 0 on success, or -1 if there is an error.
  */
