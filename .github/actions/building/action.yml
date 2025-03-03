@@ -17,6 +17,11 @@ runs:
         conan profile detect --force
         conan install . --build=missing
 
+    - name: Update submodules
+      shell: bash
+      run: |
+        git submodule update --init --recursive
+
     - name: Compile
       shell: bash
       run: |
