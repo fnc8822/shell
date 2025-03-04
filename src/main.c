@@ -674,7 +674,7 @@ void start_monitor()
     if (monitor_pid == 0)
     {
         printf("config file path: %s", config_file_path);
-        execl("shell/metricas/metrics_executable", config_file_path, (char*)NULL);
+        execl("shell/metricas/metrics_executable", "metrics_executable", config_file_path, (char*)NULL);
         perror("execl");
         exit(EXIT_FAILURE);
     }
